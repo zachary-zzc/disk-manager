@@ -27,13 +27,13 @@ class Database:
 dbroot = Database.instance().dbroot
 
 
-def add_disk(disk):
+def add_disk(disk, dbroot):
     assert isinstance(disk, Disk), "Database can only store disk type"
     dbroot[disk.label] = disk
     transaction.commit()
 
 
-def query_disk_by_label(disk):
+def query_disk_by_label(disk, dbroot):
     label = utils.get_disk_label(disk)
     return dbroot.get(label)
     # try:
@@ -58,13 +58,13 @@ def query_disk_by_spare(spare):
     pass
 
 
-def delete_disk(disk):
+def delete_disk(disk, dbroot):
     label = utils.get_disk_label(disk)
     del dbroot[label]
     transaction.commit()
 
 
-def list_disks(verbose=False):
+def list_disks(dbroot, verbose=False):
     if verbose is False:
         # add header
         print("{}\t{}\t{}\t{}\t{}".format(

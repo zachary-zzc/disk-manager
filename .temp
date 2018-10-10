@@ -1,0 +1,10 @@
+
+Disk /dev/sdg: 4000.8 GB, 4000787025920 bytes, 976754645 sectors
+Units = sectors of 1 * 4096 = 4096 bytes
+Sector size (logical/physical): 4096 bytes / 4096 bytes
+I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+Disk label type: dos
+Disk identifier: 0x9ab030d0
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdg1   *        2048   976754644  3907010388    7  HPFS/NTFS/exFAT
