@@ -5,8 +5,8 @@ import psutil as ps
 
 from singleton import Singleton
 
-_DEFAULT_USER = "disk"
-_DEFAULT_PASSWORD = "88888888"
+_DEFAULT_USER = "zzc"
+_DEFAULT_PASSWORD = "zhao900420"
 
 _TEMP_MOUNT_DIR = "/mnt/temp"
 
@@ -22,10 +22,10 @@ def get_disk_label(disk):
 class User:
     def __init__(self):
         self.name = pwd.getpwuid( os.getuid() )[0]
-        if self.name is "root":
+        if self.name == "root":
             self.passwd = ""
             self.tp = 0
-        elif self.name is _DEFAULT_USER:
+        elif self.name == _DEFAULT_USER:
             self.passwd = _DEFAULT_USER
             self.tp = 1
         else:
@@ -34,7 +34,7 @@ class User:
             self._check_pwd_valid()
             self.tp = 2
 
-    def _check_pwd_valid():
+    def _check_pwd_valid(self):
         pass
 
 def system_call(cmdline, user, with_root=True):
@@ -44,20 +44,22 @@ def system_call(cmdline, user, with_root=True):
         STDOUT
     """
     if user.tp is 0:
-        return os.open(cmdline).readlines()
+        return os.popen(cmdline).readlines()
     else:
         if with_root:
             # if temp file exist, delete it first
             if os.path.isfile(".temp"): os.remove(".temp")
+            # first touch
+            os.popen("sudo -S sleep 0.1", "w").write(user.passwd)
             # write stdout to temp file
-            os.open("sudo -S " + cmdline + " > .temp", 'w').write(user.passwd)
+            os.popen("sudo -S " + cmdline + " > .temp", 'w').write(user.passwd)
             with open(".temp", "r") as ifs:
                 stdout = ifs.readlines()
             # delete temp file
             os.remove(".temp")
             return stdout
         else:
-            return os.open(cmdline).readlines()
+            return os.popen(cmdline).readlines()
 
 def list_devices():
     with open('/proc/partitions', 'r') as ifs:
@@ -72,14 +74,14 @@ def list_devices():
                 path = "/sys/class/block/" + device_name
                 if os.path.islink(path):
                     if os.path.realpath(path).find("/usb") > 0:
-                        device.append("/dev/" + device_name)
+                        devices.append("/dev/" + device_name)
     return devices
 
 def get_device_name(device):
     return os.path.basename(device)
 
 def get_device_block_path(device):
-    return os.path.join("/sys/block", get_device_name)
+    return os.path.join("/sys/block", get_device_name(device))
 
 def get_partition_id(device, user):
     stdout = system_call("fdisk -l {}".format(device), user)
@@ -93,7 +95,7 @@ def list_mounted():
     return ps.disk_partitions()
 
 def is_mounted(device, user):
-    return get_partition_id(device) in [dev.device for dev in list_mounted()]
+    return get_partition_id(device, user) in [dev.device for dev in list_mounted()]
 
 def get_partition(device, user):
     assert(is_mounted(device, user))
@@ -105,7 +107,12 @@ def get_partition(device, user):
 
 def get_usage_from_device(device, user):
     partition = get_partition(device, user)
-    return ps.disk_usage(partition.mountpoint)
+    usage = ps.disk_usage(partition.mountpoint)
+    from collections import namedtuple
+    Usage = namedtuple("Usage", ["total", "used", "free", "percent"])
+    husage = Usage(usage.total / 1024 ** 3, usage.used / 1024 ** 3,
+            usage.free / 1024 ** 3, usage.percent)
+    return husage
 
 def get_usage_from_partition(partition, user):
     return ps.disk_usage(partition.mountpoint)
@@ -113,6 +120,10 @@ def get_usage_from_partition(partition, user):
 def mount_partition(partition, path, user):
     assert(not os.path.ismount(path))
     system_call("mount {} {}".format(partition.device, path), user)
+
+def mount_partition_id(partition_id, path, user):
+    assert(not os.path.ismount(path))
+    system_call("mount {} {}".format(partition_id, path), user)
 
 def mount_device(device, path, user):
     assert(not os.path.ismount(path))
