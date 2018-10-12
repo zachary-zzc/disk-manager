@@ -50,7 +50,8 @@ def system_call(cmdline, user, with_root=True):
             # if temp file exist, delete it first
             if os.path.isfile(".temp"): os.remove(".temp")
             # first touch
-            os.popen("sudo -S sleep 0.1", "w").write(user.passwd)
+            print "first touch"
+            os.popen("sudo -S sleep 0.01", "w").write(user.passwd)
             # write stdout to temp file
             os.popen("sudo -S " + cmdline + " > .temp", 'w').write(user.passwd)
             with open(".temp", "r") as ifs:
