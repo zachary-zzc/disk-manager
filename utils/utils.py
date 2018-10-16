@@ -50,7 +50,6 @@ def system_call(cmdline, user, with_root=True):
             # if temp file exist, delete it first
             if os.path.isfile(".temp"): os.remove(".temp")
             # first touch
-            print "first touch"
             os.popen("sudo -S sleep 0.01", "w").write(user.passwd)
             # write stdout to temp file
             os.popen("sudo -S " + cmdline + " > .temp", 'w').write(user.passwd)
@@ -118,28 +117,72 @@ def get_usage_from_device(device, user):
 def get_usage_from_partition(partition, user):
     return ps.disk_usage(partition.mountpoint)
 
-def mount_partition(partition, path, user):
-    assert(not os.path.ismount(path))
-    system_call("mount {} {}".format(partition.device, path), user)
-
 def mount_partition_id(partition_id, path, user):
     assert(not os.path.ismount(path))
     system_call("mount {} {}".format(partition_id, path), user)
 
 def mount_device(device, path, user):
     assert(not os.path.ismount(path))
-    system_call("mount {} {}".format(get_partition_id(device), path), user)
+    system_call("mount {} {}".format(get_partition_id(device, user), path), user)
 
 def umount_mountpoint(mountpoint, user):
     system_call("umount {}".format(mountpoint), user)
 
 def umount_partition(partition, user):
-    umount_mointpoint(partition.mointpoint, user)
+    umount_mountpoint(partition.mountpoint, user)
 
 def umount_device(device, user):
-    umount_mointpoint(get_partition(device, user).mointpoint, user)
+    umount_mountpoint(get_partition(device, user).mountpoint, user)
 
-def delta_mount_partition(partition, user):
+def check_readme(path, label):
+    readme = os.path.join(path, "readme_of_{}.txt".format(label))
+    # check readme file exist
+    if os.path.isfile(readme):
+        # check readme format
+        with open(readme) as ifs:
+            if "This is an auto readme file of this disk" in ifs.readline():
+                return True
+    return False
+
+def write_readme(path, label):
+    if check_readme(path, label):
+        return
+    readme = os.path.join(path, "readme_of_{}.txt".format(label))
+    with open(readme, "w") as ofs:
+        ofs.write("# This is an auto readme file of this disk\n")
+        ofs.write("\n")
+        ofs.write("This disk belongs to the Delta group of CS Dept. in CityU of HK.\n")
+        ofs.write("The No. of this disk is {}\n".format(label))
+        ofs.write("\n")
+        ofs.write("Please modify your items in the disk management system of Delta group.\n")
+        ofs.write("The disk management system aims to facilitate clear and simple disk-management.\n")
+        ofs.write("Any question about the disk management system, please contact Zicheng Zhao.\n")
+        ofs.write("\n")
+        ofs.write("Please do not MODIFY this file.\n")
+        ofs.write("\n")
+        ofs.write("\n")
+        ofs.write(50*" " + "Zicheng Zhao\n")
+        ofs.write(45*" " + "Mail: shinaider.zhao@gmail.com\n")
+
+def delta_mount_partition_id_with_label(partition_id, label, user):
+    """
+    specific script for mount disks on delta servers
+    """
+    path = os.path.join("/mnt", label)
+    if not os.path.isdir(path):
+        os.mkdir(path)
+    assert(not os.path.ismount(path))
+
+    mount_partition_id(partition_id, path, user)
+    write_readme(path, label)
+
+def delta_mount_partition_with_label(partition, label, user):
+    delta_mount_partition_id_with_label(partition.device, label, user)
+
+def delta_mount_device_with_label(device, label, user):
+    delta_mount_partition_id_with_label(get_partition_id(device, user), label, user)
+
+def delta_mount_partition_id(partition_id, user):
     """
     spesific script for mount disks on server
     """
@@ -152,7 +195,7 @@ def delta_mount_partition(partition, user):
         umount_mountpoint(_TEMP_MOUNT_DIR, user)
 
     # mount device to temp dir
-    mount_partition(partition, _TEMP_MOUNT_DIR, user)
+    mount_partition_id(partition_id, _TEMP_MOUNT_DIR, user)
 
     # find readme file
     readme = ""
@@ -160,23 +203,28 @@ def delta_mount_partition(partition, user):
         if "readme" in _.lower():
             readme = _
     # get mountpoint from readme file
-    mountpoint = os.path.basename(readme).upper().replace("README_", "")
-    mountpoint = os.path.join("/mnt", mountpoint)
+    try:
+        mountpoint = os.path.basename(readme).split(".")[0].replace("readme_of_", "")
+        mountpoint = os.path.join("/mnt", mountpoint)
+    except:
+        raise KeyError("This partition id {} do not have readme file, please mount with disk label".format(
+            partition_id
+            )
+            )
 
     # umount partition from temp mountpoint
-    umount_partition(partition, user)
+    umount_mountpoint(_TEMP_MOUNT_DIR, user)
 
     # remount partition
-    mount_partition(partition, mountpoint, user)
+    mount_partition_id(partition_id, mountpoint, user)
 
 def delta_mount_device(device, user):
-    delta_mount_partition(get_partition(device, user), user)
+    delta_mount_partition_id(get_partition_id(device, user), user)
 
 def delta_mount_all(user):
     for device in list_devices():
         if not is_mounted(device, user):
             delta_mount_device(device, user)
 
-def get_label_from_partition(partition, labels):
-    tmp = partition.mountpoint.split("/")[-1]
-    return [label for label in labels if label.upper() == tmp.upper()][0]
+def get_label_from_partition(partition):
+    return partition.mountpoint.split("/")[-1]
