@@ -7,6 +7,8 @@ from database import database as db
 from logging import logging as log
 
 _SERVER = "delta2"
+_LOG_FILE_ = "log.txt"
+_ERR_FILE_ = "err.txt"
 
 
 def update_database(dbroot, curr_partitions, prev_partitions, user):
@@ -51,16 +53,16 @@ class MonitorThread(threading.Thread):
         self._dbroot = db.Database.instance().dbroot
 
     def run(self):
-        log.write("Monitor is ready")
+        self._log.write("Monitor is ready")
         while True:
-            log.write("========================================================================")
-            log.write("mount all the disks")
+            self._log.write("========================================================================")
+            self._log.write("mount all the disks")
             delta_mount_all(self._user)
             self._curr_partitions = list_mounted()
-            log.write("update database")
+            self._log.write("update database")
             update_database(self._dbroot, self._curr_partitions, self._prev_partitions)
-            log.write("done")
-            log.write("========================================================================")
+            self._log.write("done")
+            self._log.write("========================================================================")
 
             time.sleep(1800)
 
