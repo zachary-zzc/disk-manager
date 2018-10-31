@@ -1,6 +1,7 @@
 import sys
 import os
 import pwd
+import time
 import psutil as ps
 
 from singleton import Singleton
@@ -17,6 +18,12 @@ def get_disk_label(disk):
     if hasattr(disk, "label"):
         return disk.label
     raise TypeError("{} is not a valid disk type".format(type(disk)))
+
+def _get_time():
+    return time.asctime( time.localtime(time.time()) )
+
+def _format_db_str(l):
+    return map(lambda x: "'" + str(x) + "'", l)
 
 @Singleton
 class User:
@@ -92,7 +99,7 @@ def get_partition_id(device, user):
     return stdout[-1].split()[0].strip()
 
 def list_mounted():
-    return ps.disk_partitions()
+    return [d for d in ps.disk_partitions() if d.fstype == "fuseblk"]
 
 def is_mounted(device, user):
     return get_partition_id(device, user) in [dev.device for dev in list_mounted()]
@@ -110,12 +117,21 @@ def get_usage_from_device(device, user):
     usage = ps.disk_usage(partition.mountpoint)
     from collections import namedtuple
     Usage = namedtuple("Usage", ["total", "used", "free", "percent"])
-    husage = Usage(usage.total / 1024 ** 3, usage.used / 1024 ** 3,
-            usage.free / 1024 ** 3, usage.percent)
+    husage = Usage(round(usage.total / 1024 ** 3, 2),
+                   round(usage.used / 1024 ** 3, 2),
+                   round(usage.free / 1024 ** 3, 2),
+                   round(usage.percent, 2) * 100)
     return husage
 
 def get_usage_from_partition(partition, user):
-    return ps.disk_usage(partition.mountpoint)
+    usage = ps.disk_usage(partition.mountpoint)
+    from collections import namedtuple
+    Usage = namedtuple("Usage", ["total", "used", "free", "percent"])
+    husage = Usage(round(usage.total / 1024 ** 3, 2),
+                   round(usage.used / 1024 ** 3, 2),
+                   round(usage.free / 1024 ** 3, 2),
+                   round(usage.percent, 2) * 100)
+    return husage
 
 def mount_partition_id(partition_id, path, user):
     assert(not os.path.ismount(path))

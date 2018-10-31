@@ -7,44 +7,62 @@ class Disk(Persistent):
     def __init__(
             self,
             label,
-            principle,
-            current_pos,
-            default_pos,
-            status,
-            space,
-            usage,
-            **kwargs):
+            principle="",
+            info="",
+            default_pos="",
+            current_pos="",
+            total=0.,
+            used=0.,
+            status=0,
+            mount_path="",
+            last_mount_time=None,
+            last_umount_time=None,
+            backup_status=0,
+            backup_pos=""):
         """
         Disk Object
         Properties:
-            - Label        The label of the disk (delta_*)
-            - Current_pos  Current position of the disk
-            - Status       Disk status, including idle(0), mount(1), working(2), sick(3)
-            - Principle    The persion in charge of this disk
-            - Default_pos  The default position of the disk
-            - Space        Total space of the disk
-            - Usage        Space usage
-            - Mount_path   Mount path of the disk if it is mounted
-            - Information  Information of the disk
-            - BackupInfo   Backup information of the disk
+            [BASIC INFO]
+            - Label             The label of the disk (delta_*)
+            - Principle         The persion in charge of this disk
+            - Information       Information of the disk
+            - Default_pos       The default position of the disk
+            - Current_pos       Current position of the disk
+            - Total             Total space of the disk
+            - Used              Used space of the disk
+            - Free              Free space of the disk
+            - Percent           Used percent of the disk
+            [MOUNT INFO]
+            - Status            Disk status, including idle(0), mount(1), working(2), sick(3)
+            - Mount_path        Mount path of the disk if it is mounted
+            - Last_mount_time   Last time the disk was mounted
+            - Last_umount_time  Last time the disk was umounted
+            [BACKUP INFO]
+            - Backup_status     Whether the disk has backup, No(0), Yes(1)
+            - Backup_pos        Backup label of the disk
         """
-        ava_kwargs = {'port', 'backup_info'}
-        for kwarg in kwargs.keys():
-            assert kwarg in ava_kwargs, "Invalid argument: " + kwarg
+        # ava_kwargs = {'port', 'backup_info'}
+        # for kwarg in kwargs.keys():
+        #     assert kwarg in ava_kwargs, "Invalid argument: " + kwarg
         self.label = label
         self.principle = principle
-        self.current_pos = current_pos
+        self.info = info
         self.default_pos = default_pos
+        self.current_pos = current_pos
+        self.total = total
+        self.used = used
+        self.free = total - used
+        self.percent = 0 if self.total == 0. else \
+                float(self.used) / float(self.total)
+        self.percent = round(self.percent, 2) * 100
+
         self.status = status
-        self.space = space
-        self.usage = usage
+        self.mount_path = mount_path
+        self.last_mount_time = last_mount_time
+        self.last_umount_time = last_umount_time
 
-        mount_path = kwargs.get("mount_path", False)
-        backup_info = kwargs.get("backup_info", False)
-
-        self.info = kwargs.get("info", "")
-        self.mount_path = mount_path if mount_path else ""
-        self.backup_info = backup_info if backup_info else None
+        self.backup_status = backup_status
+        self.backup_pos = backup_pos
 
     def __repr__(self):
         ret = ""
@@ -74,9 +92,9 @@ class Disk(Persistent):
     def __str__(self):
         return self.__repr__()
 
-    def is_backup(self):
-        return self.backup_info.status
+    # def is_backup(self):
+    #     return self.backup_info.status
 
-    def update_backup(self, status, pos):
-        self.backup_info.status = status
-        self.backup_info.pos = pos
+    # def update_backup(self, status, pos):
+    #     self.backup_info.status = status
+    #     self.backup_info.pos = pos
