@@ -3,6 +3,8 @@ import os
 import pwd
 import time
 import psutil as ps
+import pyudev
+from pyudev.core import Device
 
 from singleton import Singleton
 
@@ -91,12 +93,22 @@ def get_device_block_path(device):
     return os.path.join("/sys/block", get_device_name(device))
 
 def get_partition_id(device, user):
-    stdout = system_call("fdisk -l {}".format(device), user)
-    # special cases, partitions like /dev/sde2
-    spec_str = "Partition 1 does not start on physical sector boundary."
-    if spec_str in stdout[-1]:
-        return stdout[-2].split()[0].strip()[:-1] + "2"
-    return stdout[-1].split()[0].strip()
+    context = pyudev.Context()
+    dev = Device.from_device_file(context, device)
+    if dev['ID_PART_TABLE_TYPE'] == 'gpt':
+        stdout = system_call("fdisk -l {}".format(device), user)
+        # special cases, partitions like /dev/sde2
+        spec_str = "Partition 1 does not start on physical sector boundary."
+        if spec_str in stdout[-1]:
+            return device + "2"
+        return device + "1"
+    else:
+        stdout = system_call("fdisk -l {}".format(device), user)
+        # special cases, partitions like /dev/sde2
+        spec_str = "Partition 1 does not start on physical sector boundary."
+        if spec_str in stdout[-1]:
+            return stdout[-2].split()[0].strip()[:-1] + "2"
+        return stdout[-1].split()[0].strip()
 
 def list_mounted():
     return [d for d in ps.disk_partitions() if d.fstype == "fuseblk"]
@@ -239,6 +251,7 @@ def delta_mount_device(device, user):
 
 def delta_mount_all(user):
     for device in list_devices():
+
         if not is_mounted(device, user):
             delta_mount_device(device, user)
 
