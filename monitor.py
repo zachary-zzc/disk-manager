@@ -28,6 +28,7 @@ def update_database(db, curr_partitions, prev_partitions, user):
     # add partitions to server
     for partition in add_partitions:
         usage = utils.get_usage_from_partition(partition, user)
+        print usage
         # labels = list(db.keys())
         label = utils.get_label_from_partition(partition)
         if db.check_disk_in_table(label):
@@ -36,6 +37,7 @@ def update_database(db, curr_partitions, prev_partitions, user):
             db.change_disk_property(label, "STATUS", 1)
             db.change_disk_property(label, "USED", usage.used)
             db.change_disk_property(label, "TOTAL", usage.total)
+            db.change_disk_property(label, "FREE", usage.free)
             db.change_disk_property(label, "PERCENT", usage.percent)
             # # set last mount time
             # db.change_disk_property(label, "LAST_MOUNT_TIME", utils._get_time())
@@ -68,11 +70,13 @@ def update_database(db, curr_partitions, prev_partitions, user):
     # remain partitions
     for partition in rem_partitions:
         usage = utils.get_usage_from_partition(partition, user)
+        print usage
         # labels = list(db.keys())
         label = utils.get_label_from_partition(partition)
         # general function
         db.change_disk_property(label, "USED", usage.used)
         db.change_disk_property(label, "TOTAL", usage.total)
+        db.change_disk_property(label, "FREE", usage.free)
         db.change_disk_property(label, "PERCENT", usage.percent)
 
         # # for zodb

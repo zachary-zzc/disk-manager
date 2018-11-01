@@ -128,20 +128,22 @@ def get_usage_from_device(device, user):
     usage = ps.disk_usage(partition.mountpoint)
     from collections import namedtuple
     Usage = namedtuple("Usage", ["total", "used", "free", "percent"])
-    husage = Usage(round(usage.total / 1024 ** 3, 2),
-                   round(usage.used / 1024 ** 3, 2),
-                   round(usage.free / 1024 ** 3, 2),
-                   round(usage.percent, 2))
+    husage = Usage(round(float(usage.total) / 1024 ** 3, 2),
+                   round(float(usage.used) / 1024 ** 3, 2),
+                   round(float(usage.free) / 1024 ** 3, 2),
+                   round(float(usage.percent), 2))
     return husage
 
 def get_usage_from_partition(partition, user):
     usage = ps.disk_usage(partition.mountpoint)
     from collections import namedtuple
     Usage = namedtuple("Usage", ["total", "used", "free", "percent"])
-    husage = Usage(round(usage.total / 1024 ** 3, 2),
-                   round(usage.used / 1024 ** 3, 2),
-                   round(usage.free / 1024 ** 3, 2),
-                   round(usage.percent, 2))
+    print usage.total
+    print float(usage.total) / 1024 ** 4
+    husage = Usage(round(float(usage.total) / 1024 ** 4, 2),
+                   round(float(usage.used) / 1024 ** 4, 2),
+                   round(float(usage.free) / 1024 ** 4, 2),
+                   round(float(usage.percent), 2))
     return husage
 
 def mount_partition_id(partition_id, path, user):
