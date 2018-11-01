@@ -102,7 +102,7 @@ class MonitorThread(threading.Thread):
             self._log.write("done")
             self._log.write("========================================================================")
 
-            time.sleep(30)
+            time.sleep(1800)
 
 def main():
     t = MonitorThread()
