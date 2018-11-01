@@ -38,3 +38,5 @@ log
 *.log
 err
 *.err
+log.*
+err.*
