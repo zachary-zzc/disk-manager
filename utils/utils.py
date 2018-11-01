@@ -141,7 +141,7 @@ def get_usage_from_partition(partition, user):
     husage = Usage(round(usage.total / 1024 ** 3, 2),
                    round(usage.used / 1024 ** 3, 2),
                    round(usage.free / 1024 ** 3, 2),
-                   round(usage.percent, 2) * 100)
+                   round(usage.percent, 2))
     return husage
 
 def mount_partition_id(partition_id, path, user):
