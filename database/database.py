@@ -1,7 +1,7 @@
 import psycopg2 as psql
+from singleton_decorator import singleton
 
 from disk.disk import Disk
-from utils.singleton import Singleton
 from utils import utils
 
 DATABASE = "disk-manager_production"
@@ -10,7 +10,7 @@ PASSWORD = "diskmanager_production"
 PORT = "5432"
 HOST = "dl380a.cs.cityu.edu.hk"
 
-@Singleton
+@singleton
 class Database:
     """ database """
     def __init__(self):
