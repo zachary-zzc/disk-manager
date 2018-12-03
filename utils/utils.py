@@ -78,8 +78,9 @@ def read_config(config_file):
     config.read(config_file)
     return config
 
-def scan(label, user):
-    """
-    system call: du --max-depth=1 -dh /mnt/{label}
-    """
-    pass
+def size_human_fmt(num, suffix="B"):
+    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%3.1f%s%s" % (num, "Y", suffix)

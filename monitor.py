@@ -5,6 +5,8 @@ import copy
 import pwd
 import threading
 import configparser
+import json
+from datetime import datetime
 from singleton_decorator import singleton
 from utils import utils # utils
 from port import port # usb port
@@ -37,14 +39,27 @@ class User:
 
 @singleton
 class Panel:
-    def __init__(self, config_ini):
+    def __init__(self):
+        pass
+
+    def setup(self, config_ini):
         config = configparser.ConfigParser()
         config.read(config_ini)
         self.__dict__.update(config)
 
-def update_database(db, curr_partitions, prev_partitions, user, panel):
-    # scan database
-    db.scan()
+scan_queue = []
+backup_queue = []
+
+user = User()
+database = db.Database()
+panel = Panel()
+panel.setup(_CONFIG_FILE)
+
+def update_database(database, curr_partitions, prev_partitions, user, panel):
+    # scan database, disks without principles (prows), disks without default position (drows)
+    # and disk that donot have backup (brows)
+    prows, drows, brows = database.scan()
+
     # partitions in curr list not in prev list
     add_partitions = [partition for partition in curr_partitions
             if partition not in prev_partitions]
@@ -57,95 +72,114 @@ def update_database(db, curr_partitions, prev_partitions, user, panel):
     # add partitions to server
     for partition in add_partitions:
         usage = port.get_usage_from_partition(partition, user, panel)
-        # labels = list(db.keys())
         label = port.get_label_from_partition(partition, panel)
+<<<<<<< HEAD
         print label, usage, partition.mountpoint
         if db.check_disk_in_table(label):
+=======
+        disk = database.get_disk_by_label(label)
+        print disk
+        print label, usage, partition.mountpoint
+        if database.check_disk_in_table(label):
+>>>>>>> ec1223cf1ef3cb3314b95c2ff89175e71ea7d8de
             # generaral function
-            db.change_disk_property(label, "CURRENT_POS", panel.SERVER["server"])
-            db.change_disk_property(label, "STATUS", 1)
-            db.change_disk_property(label, "USED", usage.used)
-            db.change_disk_property(label, "TOTAL", usage.total)
-            db.change_disk_property(label, "FREE", usage.free)
-            db.change_disk_property(label, "PERCENT", usage.percent)
-            db.change_disk_property(label, "MOUNT_PATH", partition.mountpoint)
+            database.change_disk_property(label, "CURRENT_POS", panel.SERVER["server"])
+            database.change_disk_property(label, "STATUS", 1)
+            database.change_disk_property(label, "USED", usage.used)
+            database.change_disk_property(label, "TOTAL", usage.total)
+            database.change_disk_property(label, "FREE", usage.free)
+            database.change_disk_property(label, "PERCENT", usage.percent)
+            database.change_disk_property(label, "MOUNT_PATH", partition.mountpoint)
             # # set last mount time
-            # db.change_disk_property(label, "LAST_MOUNT_TIME", utils._get_time())
-            db.change_disk_property(label, "UPDATED_AT", utils._get_time())
-
-            # # for zodb
-            # db._dbroot[label].current_pos = panel.SERVER["server"]
-            # db._dbroot[label].status = 1
-            # db._dbroot[label].usage = usage.used
-            # db._dbroot[label].space = usage.total
+            if disk.status is 0: # this has just been mounted
+                database.change_disk_property(label, "LAST_MOUNT_TIME", datetime.now())
         else:
             # add disk to table
             disk = Disk(label, current_pos=panel.SERVER["server"], status=1,
-                        used=usage.used, total=usage.total)
-            db.add_disk(disk)
+                        used=usage.used, total=usage.total,
+                        last_mount_time=datetime.now())
+            database.add_disk(disk)
     # del partitions from server
     for partition in del_partitions:
-        # labels = list(db.keys())
         label = port.get_label_from_partition(partition, panel)
-        disk = db.get_disk_by_label(label)
+        disk = database.get_disk_by_label(label)
         # general function
-        db.change_disk_property(label, "CURRENT_POS", disk.default_pos)
-        db.change_disk_property(label, "STATUS", 0)
+        database.change_disk_property(label, "CURRENT_POS", disk.default_pos)
+        database.change_disk_property(label, "STATUS", 0)
         # # set last umount time
-        # db.change_disk_property(label, "LAST_UMOUNT_TIME", utils._get_time())
-        db.change_disk_property(label, "UPDATED_AT", utils._get_time())
-        # # for zodb
-        # db._dbroot[label].current_pos = db[label].default_pos
-        # db._dbroot[label].status = 0
+        database.change_disk_property(label, "LAST_UMOUNT_TIME", datetime.now())
     # remain partitions
     for partition in rem_partitions:
         usage = port.get_usage_from_partition(partition, user, panel)
-        # labels = list(db.keys())
         label = port.get_label_from_partition(partition, panel)
         # general function
-        db.change_disk_property(label, "USED", usage.used)
-        db.change_disk_property(label, "TOTAL", usage.total)
-        db.change_disk_property(label, "FREE", usage.free)
-        db.change_disk_property(label, "PERCENT", usage.percent)
+        database.change_disk_property(label, "USED", usage.used)
+        database.change_disk_property(label, "TOTAL", usage.total)
+        database.change_disk_property(label, "FREE", usage.free)
+        database.change_disk_property(label, "PERCENT", usage.percent)
 
-        # # for zodb
-        # db._dbroot[label].usage = usage.used
-        # db._dbroot[label].space = usage.total
+
+class ScanThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        global scan_queue
+        global user, database, panel
+
+        while True:
+            while scan_queue:
+                disk = scan_queue[0]
+                print "start to scan {}".format(disk.label)
+                hierarchy = scan.scan(disk, user, panel)
+                # update database
+                database.change_disk(disk.label, "hierarchy", json.dumps(hierarchy))
+                print "finish scan {}, database updated".format(disk.label)
+                scan_queue.pop()
+            time.sleep(int(panel.LISTEN["round"]) * 60)
 
 class Monitor():
     def __init__(self):
-        self._user = User()
         self._prev_partitions = []
         self._curr_partitions = []
-        self._db = db.Database()
-        self._panel = Panel(_CONFIG_FILE)
-        self._log = log.Logging(self._panel.LOG["log"], self._panel.LOG["err"])
+        self._log = log.Logging(panel.LOG["log"], panel.LOG["err"])
 
     def start(self):
+        global scan_queue, backup_queue
+        global user, database, panel
+
         print "monitor is ready"
         self._log.write("Monitor is ready")
         while True:
             self._log.write("========================================================================")
             self._log.write("mount all the disks")
-            port.delta_check_all(self._user, self._panel)
-            port.delta_mount_all(self._user, self._panel)
-            self._curr_partitions = port.list_mounted(self._panel)
+            # start check current disks, update database
+            port.delta_check_all(user, panel)
+            port.delta_mount_all(user, panel)
+            self._curr_partitions = port.list_mounted(panel)
             self._log.write("update database")
-            update_database(self._db, self._curr_partitions, self._prev_partitions, self._user, self._panel)
+            update_database(database, self._curr_partitions, self._prev_partitions, user, panel)
             self._prev_partitions = copy.deepcopy(self._curr_partitions)
+            # check current disks, scan if necessary, open a thread for each disk
+            for partition in self._curr_partitions:
+                label = port.get_label_from_partition(partition, panel)
+                disk = database.get_disk_by_label(label)
+                if scan.require_scan(disk, user, panel) and disk not in scan_queue:
+                    print "add {} to scan queue".format(disk.label)
+                    print "current scan queue: {}".format(", ".join([d.label for d in scan_queue]))
+                    scan_queue.append(disk)
+                # if backup.require_backup(disk, user, panel) and disk not in backup_queue:
+                #     backup_queue.append(disk)
             self._log.write("done")
             self._log.write("========================================================================")
-            time.sleep(1800)
+            time.sleep(int(panel.LISTEN["round"]) * 60)
 
 class MonitorThread(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        self._user = User()
         self._prev_partitions = []
         self._curr_partitions = []
-        self._db = db.Database()
-        self._panel = Panel(_CONFIG_FILE)
-        self._log = log.Logging(self._panel.LOG["log"], self._panel.LOG["err"])
+        self._log = log.Logging(panel.LOG["log"], panel.LOG["err"])
 
     def run(self):
         print "monitor is ready"
@@ -153,10 +187,10 @@ class MonitorThread(threading.Thread):
         while True:
             self._log.write("========================================================================")
             self._log.write("mount all the disks")
-            port.delta_mount_all(self._user, self._panel)
-            self._curr_partitions = port.list_mounted(self._panel)
+            port.delta_mount_all(user, panel)
+            self._curr_partitions = port.list_mounted(panel)
             self._log.write("update database")
-            update_database(self._db, self._curr_partitions, self._prev_partitions, self._user, self._panel)
+            update_database(database, self._curr_partitions, self._prev_partitions, user, panel)
             self._prev_partitions = copy.deepcopy(self._curr_partitions)
             self._log.write("done")
             self._log.write("========================================================================")
@@ -164,9 +198,12 @@ class MonitorThread(threading.Thread):
             time.sleep(1800)
 
 def main():
-    t = Monitor()
+    tm = Monitor()
     # t = MonitorThread()
-    t.start()
+    tm.start()
+    time.sleep(60)
+    ts = ScanThread()
+    ts.start()
 
 if __name__ == '__main__':
     main()
