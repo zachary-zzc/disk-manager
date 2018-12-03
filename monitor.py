@@ -133,7 +133,8 @@ class ScanThread(threading.Thread):
                 print "start to scan {}".format(disk.label)
                 hierarchy = scan.scan(disk, user, panel)
                 # update database
-                database.change_disk(disk.label, "hierarchy", json.dumps(hierarchy))
+                database.change_disk_property(disk.label, "LAST_SCAN_TIME", datetime.now())
+                database.change_disk_property(disk.label, "hierarchy", json.dumps(hierarchy))
                 print "finish scan {}, database updated".format(disk.label)
                 scan_queue.pop()
             time.sleep(int(panel.LISTEN["round"]) * 60)
