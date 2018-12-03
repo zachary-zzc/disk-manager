@@ -1,0 +1,1 @@
+ps -u root -f | grep python | grep monitor.py | grep sudo | awk '{print $2}' | sudo xargs kill -9

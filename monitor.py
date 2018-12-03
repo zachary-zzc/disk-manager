@@ -73,15 +73,10 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
     for partition in add_partitions:
         usage = port.get_usage_from_partition(partition, user, panel)
         label = port.get_label_from_partition(partition, panel)
-<<<<<<< HEAD
-        print label, usage, partition.mountpoint
-        if db.check_disk_in_table(label):
-=======
         disk = database.get_disk_by_label(label)
         print disk
         print label, usage, partition.mountpoint
         if database.check_disk_in_table(label):
->>>>>>> ec1223cf1ef3cb3314b95c2ff89175e71ea7d8de
             # generaral function
             database.change_disk_property(label, "CURRENT_POS", panel.SERVER["server"])
             database.change_disk_property(label, "STATUS", 1)
@@ -91,8 +86,8 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
             database.change_disk_property(label, "PERCENT", usage.percent)
             database.change_disk_property(label, "MOUNT_PATH", partition.mountpoint)
             # # set last mount time
-            if disk.status is 0: # this has just been mounted
-                database.change_disk_property(label, "LAST_MOUNT_TIME", datetime.now())
+            # if disk.status is 0: # this has just been mounted
+            database.change_disk_property(label, "LAST_MOUNT_TIME", datetime.now())
         else:
             # add disk to table
             disk = Disk(label, current_pos=panel.SERVER["server"], status=1,
@@ -136,7 +131,7 @@ class ScanThread(threading.Thread):
                 database.change_disk_property(disk.label, "LAST_SCAN_TIME", datetime.now())
                 database.change_disk_property(disk.label, "hierarchy", json.dumps(hierarchy))
                 print "finish scan {}, database updated".format(disk.label)
-                scan_queue.pop()
+                scan_queue.pop(0)
             time.sleep(int(panel.LISTEN["round"]) * 60)
 
 class Monitor():
@@ -167,8 +162,8 @@ class Monitor():
                 disk = database.get_disk_by_label(label)
                 if scan.require_scan(disk, user, panel) and disk not in scan_queue:
                     print "add {} to scan queue".format(disk.label)
-                    print "current scan queue: {}".format(", ".join([d.label for d in scan_queue]))
                     scan_queue.append(disk)
+                print "current scan queue: {}".format(", ".join([d.label for d in scan_queue]))
                 # if backup.require_backup(disk, user, panel) and disk not in backup_queue:
                 #     backup_queue.append(disk)
             self._log.write("done")
@@ -183,26 +178,39 @@ class MonitorThread(threading.Thread):
         self._log = log.Logging(panel.LOG["log"], panel.LOG["err"])
 
     def run(self):
+        global scan_queue, backup_queue
+        global user, database, panel
+
         print "monitor is ready"
         self._log.write("Monitor is ready")
         while True:
             self._log.write("========================================================================")
             self._log.write("mount all the disks")
+            # start check current disks, update database
+            port.delta_check_all(user, panel)
             port.delta_mount_all(user, panel)
             self._curr_partitions = port.list_mounted(panel)
             self._log.write("update database")
             update_database(database, self._curr_partitions, self._prev_partitions, user, panel)
             self._prev_partitions = copy.deepcopy(self._curr_partitions)
+            # check current disks, scan if necessary, open a thread for each disk
+            for partition in self._curr_partitions:
+                label = port.get_label_from_partition(partition, panel)
+                disk = database.get_disk_by_label(label)
+                if scan.require_scan(disk, user, panel) and disk not in scan_queue:
+                    print "add {} to scan queue".format(disk.label)
+                    scan_queue.append(disk)
+                print "current scan queue: {}".format(", ".join([d.label for d in scan_queue]))
+                # if backup.require_backup(disk, user, panel) and disk not in backup_queue:
+                #     backup_queue.append(disk)
             self._log.write("done")
             self._log.write("========================================================================")
-
-            time.sleep(1800)
+            time.sleep(int(panel.LISTEN["round"]) * 60)
 
 def main():
-    tm = Monitor()
-    # t = MonitorThread()
+    # tm = Monitor()
+    tm = MonitorThread()
     tm.start()
-    time.sleep(60)
     ts = ScanThread()
     ts.start()
 

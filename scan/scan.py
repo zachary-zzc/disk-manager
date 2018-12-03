@@ -4,7 +4,7 @@ import datetime
 import scandir
 from utils.utils import *
 
-def require_scan(disk, user, panel):
+def require_scan(disk, user=None, panel=None):
     if not disk.last_scan_time:
         return True
     delta = datetime.timedelta(days=int(panel.LISTEN["scan"]))
@@ -27,8 +27,11 @@ def get_tree_size(path):
                 print("Error calling stat():", error)
     return total
 
-def scan(disk, user, panel, ignore=None):
+def scan(disk, user=None, panel=None, ignore=None):
     hierarchy = {}
     for entry in scandir.scandir(disk.mount_path):
-        hierarchy[entry.name] = size_human_fmt(get_tree_size(entry.path))
+        if entry.is_dir(follow_symlinks=False):
+            hierarchy[entry.name] = size_human_fmt(get_tree_size(entry.path))
+        else:
+            hierarchy[entry.name] = size_human_fmt(entry.stat(follow_symlinks=False).st_size)
     return hierarchy

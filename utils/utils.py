@@ -78,8 +78,8 @@ def read_config(config_file):
     config.read(config_file)
     return config
 
-def size_human_fmt(num, suffix="B"):
-    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+def size_human_fmt(num, suffix=""):
+    for unit in ["B", "K", "M", "G", "T", "P", "E", "Z"]:
         if abs(num) < 1024.0:
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
