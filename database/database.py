@@ -1,6 +1,7 @@
 import psycopg2 as psql
+import json
 from singleton_decorator import singleton
-
+from datetime import datetime
 from disk.disk import Disk
 from utils import utils
 
@@ -62,22 +63,52 @@ class Database:
         cur = self._conn.cursor()
         try:
             cur.execute("SELECT * from disks WHERE label = '{}'".format(label))
-            index, label, princ, default_pos, \
-                    current_pos, status, total, used, \
+            index, label, princ, default_pos, current_pos, status, total, used, \
                     free, percent, mount_path, \
-                    backup_status, backup_pos = cur.fetchall()[0]
+                    backup_status, backup_pos, \
+                    last_mount_time, last_umount_time, \
+                    last_scan_time, last_backup_time, \
+                    description, disk_info_string, \
+                    hierarchy_string = cur.fetchall()[0]
+            # change disk_info, hierarchy to dict object
+            disk_info = json.loads(disk_info_string) if disk_info_string else {}
+            hierarchy = json.loads(hierarchy_string) if hierarchy_string else {}
             disk = Disk(label, principle=princ, default_pos=default_pos,
                     current_pos=current_pos, status=status, total=total,
                     used=used, mount_path=mount_path, backup_status=backup_status,
-                    backup_pos=backup_pos)
+                    backup_pos=backup_pos, last_mount_time=last_mount_time,
+                    last_umount_time=last_umount_time, last_scan_time=last_scan_time,
+                    last_backup_time=last_backup_time, description=description,
+                    disk_info=disk_info, hierarchy=hierarchy)
+            self._conn.commit()
+        except:
+            self._conn.rollback()
+            self._conn.commit()
+            raise
+        finally:
+            cur.close()
+            self._close()
+        return disk
+
+    def get_disk_property(self, label, header):
+        self._open()
+        cur = self._conn.cursor()
+        prop = None
+
+        try:
+            cur.execute("SELECT {} from disks WHERE label = '{}'".format(header, label))
+            prop = cur.fetchall()[0]
+            if header is "disk_info" or header is "hierarchy":
+                prop = json.loads(prop)
             self._conn.commit()
         except Exception:
             self._conn.rollback()
             self._conn.commit()
+            raise
         finally:
             cur.close()
             self._close()
-            return disk
+        return prop
 
     def change_disk_property(self, label, header, content):
         self._open()
@@ -86,7 +117,7 @@ class Database:
         try:
             cur.execute("UPDATE disks SET {} = '{}' WHERE label = '{}'".format(header, content, label))
             self._conn.commit()
-        except Exception:
+        except:
             self._conn.rollback()
             self._conn.commit()
             raise
@@ -102,7 +133,7 @@ class Database:
             cur.execute("SELECT label from disks")
             labels = cur.fetchall()
             return label in [l[0] for l in labels]
-        except Exception:
+        except:
             self._conn.rollback()
             self._conn.commit()
             raise
@@ -125,13 +156,13 @@ class Database:
                              disk.current_pos, disk.status, disk.total,
                              disk.used, disk.free, disk.percent, disk.mount_path,
                              disk.backup_status, disk.backup_pos,
-                             utils._get_time(), utils._get_time()]
+                             datetime.now(), datetime.now()]
                             )
                             )
                         )
                     )
             self._conn.commit()
-        except Exception:
+        except:
             self._conn.rollback()
             self._conn.commit()
             raise
