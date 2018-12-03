@@ -73,10 +73,15 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
     for partition in add_partitions:
         usage = port.get_usage_from_partition(partition, user, panel)
         label = port.get_label_from_partition(partition, panel)
+<<<<<<< HEAD
+        print label, usage, partition.mountpoint
+        if db.check_disk_in_table(label):
+=======
         disk = database.get_disk_by_label(label)
         print disk
         print label, usage, partition.mountpoint
         if database.check_disk_in_table(label):
+>>>>>>> ec1223cf1ef3cb3314b95c2ff89175e71ea7d8de
             # generaral function
             database.change_disk_property(label, "CURRENT_POS", panel.SERVER["server"])
             database.change_disk_property(label, "STATUS", 1)

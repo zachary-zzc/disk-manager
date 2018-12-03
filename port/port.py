@@ -123,22 +123,25 @@ def write_readme(path, label, panel=None):
     if check_readme(path, label):
         return
     readme = os.path.join(path, "readme_of_{}.txt".format(label))
-    print "write readme file to {}".format(readme)
-    with open(readme, "w") as ofs:
-        ofs.write("# This is an auto readme file of this disk\n")
-        ofs.write("\n")
-        ofs.write("This disk belongs to the Delta group of CS Dept. in CityU of HK.\n")
-        ofs.write("The No. of this disk is {}\n".format(label))
-        ofs.write("\n")
-        ofs.write("Please modify your items in the disk management system of Delta group.\n")
-        ofs.write("The disk management system aims to facilitate clear and simple disk-management.\n")
-        ofs.write("Any question about the disk management system, please contact Zicheng Zhao.\n")
-        ofs.write("\n")
-        ofs.write("Please do not MODIFY this file.\n")
-        ofs.write("\n")
-        ofs.write("\n")
-        ofs.write(50*" " + "Zicheng Zhao\n")
-        ofs.write(45*" " + "Mail: shinaider.zhao@gmail.com\n")
+    try:
+        with open(readme, "w") as ofs:
+            ofs.write("# This is an auto readme file of this disk\n")
+            ofs.write("\n")
+            ofs.write("This disk belongs to the Delta group of CS Dept. in CityU of HK.\n")
+            ofs.write("The No. of this disk is {}\n".format(label))
+            ofs.write("\n")
+            ofs.write("Please modify your items in the disk management system of Delta group.\n")
+            ofs.write("The disk management system aims to facilitate clear and simple disk-management.\n")
+            ofs.write("Any question about the disk management system, please contact Zicheng Zhao.\n")
+            ofs.write("\n")
+            ofs.write("Please do not MODIFY this file.\n")
+            ofs.write("\n")
+            ofs.write("\n")
+            ofs.write(50*" " + "Zicheng Zhao\n")
+            ofs.write(45*" " + "Mail: shinaider.zhao@gmail.com\n")
+        print "write readme file to {}".format(readme)
+    except IOError:
+        print "Cannot write readme file to {} because of IO Error. Please check the disk manually.".format(path)
 
 def delta_mount_partition_id_with_label(partition_id, label, user, panel=None):
     """
