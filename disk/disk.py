@@ -97,6 +97,9 @@ class Disk(Persistent):
         ret += "Principle: {}\n".format(self.principle)
         ret += "Total Space: {}G\n".format(self.total)
         ret += "Usage: {}G\n".format(self.used)
+        ret += "Disk Information:\n"
+        for key, value in self.disk_info.items():
+            ret += "{}: {}\n".format(key, value)
         # if self.backup_info:
         #     ret += "Backup Information:\n"
         #     ret += str(self.backup_info)

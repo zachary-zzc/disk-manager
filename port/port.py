@@ -55,7 +55,11 @@ def get_partition_id(device, user, panel=None):
 
 def get_device_info(device, user=None, panel=None):
     context = pyudev.Context()
-    dev = Device.from_device_file(context, device)
+    try:
+        dev = Device.from_device_file(context, device)
+    except:
+        print "Cannot load device {}, please check manually".format(device)
+        return {}
     fs_label = "" if "ID_FS_LABEL" not in dev else dev["ID_FS_LABEL"]
     fs_type = "" if "ID_FS_TYPE" not in dev else dev["ID_FS_TYPE"]
     vendor = "" if "ID_VENDOR" not in dev else dev["ID_VENDOR"]
