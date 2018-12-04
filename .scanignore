@@ -1,0 +1,10 @@
+*.BIN
+System Volume Information
+*.app
+*.inf
+*.ico
+Seagate*
+*.exe
+Warranty.pdf
+*.tmp
+WD Apps for Mac

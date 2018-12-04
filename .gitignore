@@ -43,4 +43,7 @@ err.*
 *.txt
 
 ## config
-*.ini
+.ini
+
+## test
+test.*
