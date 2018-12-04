@@ -53,6 +53,22 @@ def get_partition_id(device, user, panel=None):
             return stdout[-2].split()[0].strip()[:-1] + "2"
         return stdout[-1].split()[0].strip()
 
+def get_device_info(device, user=None, panel=None):
+    context = pyudev.Context()
+    dev = Device.from_device_file(context, device)
+    fs_label = "" if "ID_FS_LABEL" not in dev else dev["ID_FS_LABEL"]
+    fs_type = "" if "ID_FS_TYPE" not in dev else dev["ID_FS_TYPE"]
+    vendor = "" if "ID_VENDOR" not in dev else dev["ID_VENDOR"]
+    model = "" if "ID_MODEL" not in dev else dev["ID_MODEL"]
+    short_serial = "" if "ID_SERIAL_SHORT" not in dev else dev["ID_SERIAL_SHORT"]
+    serial = "" if "ID_SERIAL" not in dev else dev["ID_SERIAL"]
+    return {"fs_label": fs_label,
+            "fs_type": fs_type,
+            "vendor": vendor,
+            "model": model,
+            "short_serial": short_serial,
+            "serial": serial, }
+
 def list_mounted(panel=None):
     return [d for d in ps.disk_partitions()
             if d.fstype == "fuseblk"

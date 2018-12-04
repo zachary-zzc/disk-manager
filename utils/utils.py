@@ -84,3 +84,31 @@ def size_human_fmt(num, suffix=""):
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
     return "%3.1f%s%s" % (num, "Y", suffix)
+
+def parse_ignore(fname):
+    import re
+    ret = {}
+    with open(fname) as ifs:
+        header = 'all'
+        for line in ifs:
+            line = line.strip("\n")
+            if line.strip() is "": # space lines
+                continue
+            if re.match(r"^#", line): # command lines
+                continue
+            if re.match(r"^>", line): # header line
+                header = line[1:].strip()
+                ret[header] = []
+                continue
+            if header in ret:
+                ret[header].append(line.strip())
+            else:
+                ret[header] = [line.strip()]
+    return ret
+
+def check_ignore(value, patterns):
+    import re
+    reg_lst = []
+    for regex in patterns:
+        reg_lst.append(re.compile(regex.replace("*", ".[a-zA-z\s]*"))) # python 2.7.5 regex issue
+    return any(compiled_reg.match(value) for compiled_reg in reg_lst)

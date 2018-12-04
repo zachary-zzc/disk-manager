@@ -15,8 +15,9 @@ def get_tree_size(path):
     for entry in scandir.scandir(path):
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
+            entry.stat(follow_symlinks=False)
         except OSError as error:
-            print('Error calling is_dir():', error)
+            print 'OSError', error
             continue
         if is_dir:
             total += get_tree_size(entry.path)
@@ -24,14 +25,28 @@ def get_tree_size(path):
             try:
                 total += entry.stat(follow_symlinks=False).st_size
             except OSError as error:
-                print("Error calling stat():", error)
+                print "OSError, ", e
+                total += 0
     return total
 
 def scan(disk, user=None, panel=None, ignore=None):
     hierarchy = {}
     for entry in scandir.scandir(disk.mount_path):
-        if entry.is_dir(follow_symlinks=False):
+        if check_ignore(entry.name, ignore):
+            continue
+        try:
+            is_dir = entry.is_dir(follow_symlinks=False)
+            entry.stat(follow_symlinks=False)
+        except OSError as error:
+            print 'OSError', error
+            hierarchy[entry.name] = error.strerror
+            continue
+        if is_dir:
             hierarchy[entry.name] = size_human_fmt(get_tree_size(entry.path))
         else:
-            hierarchy[entry.name] = size_human_fmt(entry.stat(follow_symlinks=False).st_size)
+            try:
+                hierarchy[entry.name] = size_human_fmt(entry.stat(follow_symlinks=False).st_size)
+            except OSError as error:
+                print "OSError ", error
+                hierarchy[entry.name] = error.strerror
     return hierarchy
