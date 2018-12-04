@@ -233,7 +233,7 @@ class MonitorThread(threading.Thread):
                     scan_queue.append(disk)
                 # if backup.require_backup(disk, user, panel) and disk not in backup_queue:
                 #     backup_queue.append(disk)
-            # print "current scan queue: {}".format(", ".join([d.label for d in scan_queue]))
+            print "current scan queue: {}".format(", ".join([d.label for d in scan_queue]))
             self._log.write("current scan queue: {}".format(", ".join([d.label for d in scan_queue])))
             self._log.write("done")
             self._log.write("========================================================================")
