@@ -14,32 +14,34 @@ from pyudev.core import Device
 # _DEFAULT_PASSWORD = "zhao900420"
 # _TEMP_MOUNT_DIR = "/mnt/temp"
 #
-_admin_email = "shinaider.zhao@gmail.com"
-_login = "shinaider.zhao@gmail.com"
-_password = "3XkfqFE<"
+_admin_email = u"shinaider.zhao@gmail.com"
+_login = u"shinaider.zhao@gmail.com"
+_password = u"3XkfqFE<"
+
 #
 # _MONITOR_ROUND = 30 # check usb ports every 30 minutes
 # _SCAN_ROUND = 7 # scan disk usage and first lvl directories every 7 days
 # _BACKUP_ROUND = 30 # backup disk every 30 days
 
-def _get_time():
+def get_time():
     return time.asctime( time.localtime(time.time()) )
 
-def _format_db_str(l):
+def format_db_str(l):
     return map(lambda x: "'" + str(x) + "'", l)
 
 
 def send_email(from_addr, to_addr_list, cc_addr_list,
         subject, message,
-        login, password,
-        smtpserver='smtp.gmail.com:587'):
-    header = 'From: %s' % from_addr
-    header += 'To: %s' % ','.join(to_addr_list)
-    header += 'Cc: %s' % ','.join(cc_addr_list)
-    header += 'Subject: %s' % subject
+        login, password):
+    header = 'From: %s\n' % from_addr
+    header += 'To: %s\n' % ','.join(to_addr_list)
+    header += 'Cc: %s\n' % ','.join(cc_addr_list)
+    header += 'Subject: %s\n' % subject
 
     message = header + message
-    server = smtplib.SMTP(smtpserver)
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    # server = smtplib.SMTP_SSL('smtp.googlemail.com', 465)
+    server.ehlo()
     server.starttls()
     server.login(login, password)
     problems = server.sendmail(from_addr, to_addr_list, message)

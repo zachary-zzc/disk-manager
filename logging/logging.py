@@ -1,7 +1,7 @@
 import os
 import time
 
-from utils.utils import _get_time
+from utils.utils import get_time
 
 class Logging:
     def __init__(self, log_file, err_file,
@@ -14,9 +14,9 @@ class Logging:
         self._efs.close()
 
     def write(self, info):
-        local_time = _get_time()
+        local_time = get_time()
         self._ifs.write("[{}] {}\n".format(local_time, info))
 
     def error(self, info):
-        local_time = _get_time()
+        local_time = get_time()
         self._efs.write("[{}] {}\n".format(local_time, info))

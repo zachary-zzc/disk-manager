@@ -4,7 +4,6 @@ import pwd
 import psutil as ps
 import pyudev
 from pyudev.core import Device
-
 from utils.utils import *
 
 def get_disk_label(disk, panel=None):
@@ -204,17 +203,19 @@ def delta_mount_partition_id(partition_id, user, panel=None):
     for _ in os.listdir(panel.MOUNT["temp_mount_dir"]):
         if "readme" in _.lower():
             readme = _
+    # umount from temp dir
+    umount_mountpoint(panel.MOUNT["temp_mount_dir"], user, panel)
     # get mountpoint from readme file
-    try:
-        mountpoint = os.path.basename(readme).split(".")[0].replace("readme_of_", "")
-        mountpoint = os.path.join("/mnt", mountpoint)
-    except:
+    mountpoint = os.path.basename(readme).split(".")[0].replace("readme_of_", "")
+    if not mountpoint: # cannot detect disk label
         subject = "[MOUNT ERROR] Cannot auto mount disk at %s" % panel.SERVER["server"]
         content  = "Hi Zac, \n"
         content += "\n"
-        content += "Time: %s\n" % str(_get_time())
+        content += "Time: %s\n" % str(get_time())
+        content += "\n"
         content += "Error: Cannot auto mount disk at %s\n" % panel.SERVER["server"]
-        content += "       We cannot find the README file that indicates disk label\n"
+        content += "We cannot find the README file that indicates disk label\n"
+        content += "\n"
         content += "Partition ID: %s\n" % partition_id
         content += "\n"
         content += "Please manually mount this partition, README file will be automatically generated within %s minutes after you mount the disk" % str(panel.LISTEN["round"])
@@ -223,17 +224,11 @@ def delta_mount_partition_id(partition_id, user, panel=None):
         content += "best regards\n"
         content += "DISK MANAGER@delta\n"
 
-        to_addr_list = [panel.REPORT["admin_email_list"].split(",")]
+        to_addr_list = panel.REPORT["admin_email_list"].split(",")
         cc_addr_list = []
         admin_email(subject, content, to_addr_list, cc_addr_list)
-    finally:
-        # umount partition from temp mountpoint
-        umount_mountpoint(panel.MOUNT["temp_mount_dir"], user, panel)
-        # raise KeyError("This partition id {} do not have readme file, please mount with disk label".format(
-        #     partition_id
-        #     )
-        #     )
-    # remount partition
+        return
+    mountpoint = os.path.join("/mnt", mountpoint)
     try:
         mount_partition_id(partition_id, mountpoint, user, panel)
         print "successfully mount disk {} to {}".format(partition_id, mountpoint)

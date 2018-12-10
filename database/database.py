@@ -3,13 +3,7 @@ import json
 from singleton_decorator import singleton
 from datetime import datetime
 from disk.disk import Disk
-from utils import utils
-
-DATABASE = "disk-manager_production"
-USER = "diskmanager"
-PASSWORD = "diskmanager_production"
-PORT = "5432"
-HOST = "dl380a.cs.cityu.edu.hk"
+from utils.utils import *
 
 @singleton
 class Database:
@@ -17,10 +11,13 @@ class Database:
     def __init__(self):
         self._conn = None
 
-    def _open(self):
+    def _open(self, panel):
         try:
-            self._conn = psql.connect(database=DATABASE, user=USER,
-                password=PASSWORD, host=HOST, port=PORT)
+            self._conn = psql.connect(database=panel.DATABASE["database"],
+                    user=panel.DATABASE["user"],
+                    password=panel.DATABASE["password"],
+                    host = panel.DATABASE["host"],
+                    port = panel.DATABASE["port"])
         except:
             raise
 
@@ -30,12 +27,12 @@ class Database:
         except:
             raise
 
-    def scan(self):
+    def scan(self, panel):
         prows = []
         drows = []
         brows = []
 
-        self._open()
+        self._open(panel)
         cur = self._conn.cursor()
         try:
             # disks without principles
@@ -56,10 +53,10 @@ class Database:
             self._close()
             return prows, drows, brows
 
-    def get_disk_by_label(self, label):
+    def get_disk_by_label(self, label, panel):
         disk = None
 
-        self._open()
+        self._open(panel)
         cur = self._conn.cursor()
         try:
             cur.execute("SELECT * from disks WHERE label = '{}'".format(label))
@@ -90,8 +87,8 @@ class Database:
             self._close()
         return disk
 
-    def get_disk_property(self, label, header):
-        self._open()
+    def get_disk_property(self, label, header, panel):
+        self._open(panel)
         cur = self._conn.cursor()
         prop = None
 
@@ -110,8 +107,8 @@ class Database:
             self._close()
         return prop
 
-    def change_disk_property(self, label, header, content):
-        self._open()
+    def change_disk_property(self, label, header, content, panel):
+        self._open(panel)
         cur = self._conn.cursor()
 
         try:
@@ -125,8 +122,8 @@ class Database:
             cur.close()
             self._close()
 
-    def check_disk_in_table(self, label):
-        self._open()
+    def check_disk_in_table(self, label, panel):
+        self._open(panel)
         cur = self._conn.cursor()
 
         try:
@@ -141,8 +138,8 @@ class Database:
             cur.close()
             self._close()
 
-    def add_disk(self, disk):
-        self._open()
+    def add_disk(self, disk, panel):
+        self._open(panel)
         cur = self._conn.cursor()
 
         try:
@@ -151,7 +148,7 @@ class Database:
                     "status, total, used, free, percent, mount_path, "
                     "backup_status, backup_place, created_at, updated_at) "
                     "VALUES ({})".format(
-                        ', '.join(utils._format_db_str(
+                        ', '.join(format_db_str(
                             [disk.label, disk.principle, disk.default_pos,
                              disk.current_pos, disk.status, disk.total,
                              disk.used, disk.free, disk.percent, disk.mount_path,
