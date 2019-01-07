@@ -81,6 +81,9 @@ class Database:
         except:
             self._conn.rollback()
             self._conn.commit()
+            print label
+            cur.execute("SELECT * from disks WHERE label = '{}'".format(label))
+            print cur.fetchall()
             raise
         finally:
             cur.close()

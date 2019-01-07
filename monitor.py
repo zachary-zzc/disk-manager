@@ -63,12 +63,19 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
     # update disk basic info
     for partition in curr_partitions:
         label = port.get_label_from_partition(partition, panel)
-        disk = database.get_disk_by_label(label, panel)
-        if disk.disk_info:
-            continue
-        disk_info = port.get_device_info(partition.device, user, panel)
-        disk.disk_info = disk_info
-        database.change_disk_property(label, "DISK_INFO", json.dumps(disk.disk_info), panel)
+        if database.check_disk_in_table(label, panel):
+            disk = database.get_disk_by_label(label, panel)
+            if disk.disk_info:
+                continue
+            disk_info = port.get_device_info(partition.device, user, panel)
+            disk.disk_info = disk_info
+            database.change_disk_property(label, "DISK_INFO", json.dumps(disk.disk_info), panel)
+        else:
+            # add disk to table
+            disk = Disk(label, current_pos=panel.SERVER["server"], status=1,
+                        used=usage.used, total=usage.total,
+                        last_mount_time=datetime.now())
+            database.add_disk(disk, panel)
 
     # partitions in curr list not in prev list
     add_partitions = [partition for partition in curr_partitions
@@ -86,24 +93,18 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
         disk = database.get_disk_by_label(label, panel)
         print disk
         print label, usage, partition.mountpoint
-        if database.check_disk_in_table(label, panel):
-            # generaral function
-            database.change_disk_property(label, "CURRENT_POS", panel.SERVER["server"], panel)
-            database.change_disk_property(label, "STATUS", 1, panel)
-            database.change_disk_property(label, "USED", usage.used, panel)
-            database.change_disk_property(label, "TOTAL", usage.total, panel)
-            database.change_disk_property(label, "FREE", usage.free, panel)
-            database.change_disk_property(label, "PERCENT", usage.percent, panel)
-            database.change_disk_property(label, "MOUNT_PATH", partition.mountpoint, panel)
-            # # set last mount time
-            # if disk.status is 0: # this has just been mounted
-            database.change_disk_property(label, "LAST_MOUNT_TIME", datetime.now(), panel)
-        else:
-            # add disk to table
-            disk = Disk(label, current_pos=panel.SERVER["server"], status=1,
-                        used=usage.used, total=usage.total,
-                        last_mount_time=datetime.now())
-            database.add_disk(disk, panel)
+        # if database.check_disk_in_table(label, panel):
+        # generaral function
+        database.change_disk_property(label, "CURRENT_POS", panel.SERVER["server"], panel)
+        database.change_disk_property(label, "STATUS", 1, panel)
+        database.change_disk_property(label, "USED", usage.used, panel)
+        database.change_disk_property(label, "TOTAL", usage.total, panel)
+        database.change_disk_property(label, "FREE", usage.free, panel)
+        database.change_disk_property(label, "PERCENT", usage.percent, panel)
+        database.change_disk_property(label, "MOUNT_PATH", partition.mountpoint, panel)
+        # # set last mount time
+        # if disk.status is 0: # this has just been mounted
+        database.change_disk_property(label, "LAST_MOUNT_TIME", datetime.now(), panel)
     # del partitions from server
     for partition in del_partitions:
         label = port.get_label_from_partition(partition, panel)
