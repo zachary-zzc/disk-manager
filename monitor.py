@@ -102,8 +102,8 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
         database.change_disk_property(label, "PERCENT", usage.percent, panel)
         database.change_disk_property(label, "MOUNT_PATH", partition.mountpoint, panel)
         # # set last mount time
-        # if disk.status is 0: # this has just been mounted
-        database.change_disk_property(label, "LAST_MOUNT_TIME", datetime.now(), panel)
+        if disk.status is 0: # this has just been mounted
+            database.change_disk_property(label, "LAST_MOUNT_TIME", datetime.now(), panel)
     # del partitions from server
     for partition in del_partitions:
         label = port.get_label_from_partition(partition, panel)
