@@ -1,6 +1,7 @@
 import os
 import sys
 from persistent import Persistent
+from datetime import datetime
 
 
 class Disk(Persistent):
@@ -17,10 +18,10 @@ class Disk(Persistent):
             status=0,
             mount_path="",
             hierarchy={},
-            last_mount_time=None,
-            last_umount_time=None,
-            last_scan_time=None,
-            last_backup_time=None,
+            last_mount_time=datetime.min,
+            last_umount_time=datetime.min,
+            last_scan_time=datetime.min,
+            last_backup_time=datetime.min,
             backup_status=0,
             backup_pos=""):
         """

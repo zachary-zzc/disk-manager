@@ -26,9 +26,11 @@ _password = u"3XkfqFE<"
 def get_time():
     return time.asctime( time.localtime(time.time()) )
 
-def format_db_str(l):
-    return map(lambda x: "'" + str(x) + "'", l)
+def db_str(s):
+    return "'" + str(s) + "'"
 
+def format_db_str(l):
+    return map(lambda x: db_str(x), l)
 
 def send_email(from_addr, to_addr_list, cc_addr_list,
         subject, message,

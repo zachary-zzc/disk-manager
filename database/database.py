@@ -149,14 +149,19 @@ class Database:
             cur.execute("INSERT INTO disks "
                     "(label, principle, default_pos, current_pos, "
                     "status, total, used, free, percent, mount_path, "
-                    "backup_status, backup_place, created_at, updated_at) "
+                    "backup_status, backup_place, "
+                    "last_mount_time, last_umount_time, "
+                    "last_scan_time, last_backup_time, "
+                    "description, disk_info, hierarchy) "
                     "VALUES ({})".format(
                         ', '.join(format_db_str(
                             [disk.label, disk.principle, disk.default_pos,
                              disk.current_pos, disk.status, disk.total,
                              disk.used, disk.free, disk.percent, disk.mount_path,
                              disk.backup_status, disk.backup_pos,
-                             datetime.now(), datetime.now()]
+                             disk.last_mount_time, disk.last_umount_time,
+                             disk.last_scan_time, disk.last_backup_time,
+                             disk.description, disk.disk_info, disk.hierarchy]
                             )
                             )
                         )

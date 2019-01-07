@@ -73,6 +73,7 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
         else:
             # add disk to table
             disk = Disk(label, current_pos=panel.SERVER["server"], status=1)
+            print disk.last_umount_time
             database.add_disk(disk, panel)
 
     # partitions in curr list not in prev list
