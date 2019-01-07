@@ -72,9 +72,7 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
             database.change_disk_property(label, "DISK_INFO", json.dumps(disk.disk_info), panel)
         else:
             # add disk to table
-            disk = Disk(label, current_pos=panel.SERVER["server"], status=1,
-                        used=usage.used, total=usage.total,
-                        last_mount_time=datetime.now())
+            disk = Disk(label, current_pos=panel.SERVER["server"], status=1)
             database.add_disk(disk, panel)
 
     # partitions in curr list not in prev list
