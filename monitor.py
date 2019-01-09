@@ -73,7 +73,6 @@ def update_database(database, curr_partitions, prev_partitions, user, panel):
         else:
             # add disk to table
             disk = Disk(label, current_pos=panel.SERVER["server"], status=1)
-            print disk.last_umount_time
             database.add_disk(disk, panel)
 
     # partitions in curr list not in prev list
@@ -185,6 +184,8 @@ class Monitor():
                 disk = database.get_disk_by_label(label, panel)
                 if scan.require_scan(disk, user, panel) and disk not in scan_queue and label not in self._scan_ignore:
                     print "add {} to scan queue".format(disk.label)
+                    if not disk.mount_path:
+                        disk.mount_path = os.path.join(panel.MOUNT["mount_dir"], disk.label)
                     scan_queue.append(disk)
                 print "current scan queue: {}".format(", ".join([d.label for d in scan_queue]))
                 # if backup.require_backup(disk, user, panel) and disk not in backup_queue:

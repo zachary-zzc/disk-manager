@@ -60,8 +60,14 @@ class Disk(Persistent):
         self.description = description
         self.default_pos = default_pos
         self.current_pos = current_pos
-        self.total = total
-        self.used = used
+        try:
+            self.total = float(total)
+        except:
+            self.total = 0.
+        try:
+            self.used = float(used)
+        except:
+            self.used = 0.
         self.free = total - used
         self.percent = 0 if self.total == 0. else \
                 float(self.used) / float(self.total)
