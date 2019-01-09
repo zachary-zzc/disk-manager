@@ -235,7 +235,8 @@ class MonitorThread(threading.Thread):
                 # if backup.require_backup(disk, user, panel) and disk not in backup_queue:
                 #     backup_queue.append(disk)
             print "current scan queue: {}".format(", ".join([d.label for d in scan_queue]))
-            self._log.write("current scan queue: {}".format(", ".join([d.label for d in scan_queue])))
+            self._log.write("current scan disk queue: {}".format(", ".join([d.label for d in scan_queue])))
+            self._log.write("current scan mount path queue: {}".format(", ".join([d.mount_path for d in scan_queue])))
             self._log.write("done")
             self._log.write("========================================================================")
             time.sleep(int(panel.LISTEN["round"]) * 60)
