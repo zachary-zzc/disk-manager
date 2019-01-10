@@ -1,0 +1,2 @@
+sudo rm log
+sudo python -u monitor.py &> log &
